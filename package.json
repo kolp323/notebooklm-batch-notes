@@ -1,0 +1,27 @@
+{
+  "name": "notebooklm-automation",
+  "version": "1.0.0",
+  "description": "Batch prompt NotebookLM with Playwright and export Markdown answers for Notion workflows.",
+  "main": "batch-notebooklm.js",
+  "scripts": {
+    "open": "node open-notebooklm.js",
+    "login": "node open-notebooklm.js",
+    "start": "node batch-notebooklm.js",
+    "batch": "node batch-notebooklm.js",
+    "start:force": "node batch-notebooklm.js --force",
+    "check": "node -c config.js && node -c open-notebooklm.js && node -c batch-notebooklm.js"
+  },
+  "keywords": [
+    "notebooklm",
+    "playwright",
+    "edge",
+    "notion",
+    "automation"
+  ],
+  "author": "",
+  "license": "MIT",
+  "type": "commonjs",
+  "dependencies": {
+    "playwright": "^1.60.0"
+  }
+}

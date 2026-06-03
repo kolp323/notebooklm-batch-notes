@@ -1,0 +1,31 @@
+{
+  "notebooklmUrl": "https://notebooklm.google.com/",
+  "userDataDir": "./edge-profile",
+  "promptTemplate": "按照下面的提纲详细总结一下 第 8 章 PPT 中 {WORD} 的所有知识点或内容，并加上详细的讲解，输出为 markdown 笔记，不要包含引用标记：\n# {WORD}",
+  "words": [
+    "代码生成器设计中的问题",
+    "目标语言",
+    "目标代码中的地址",
+    "基本块及其优化",
+    "控制流图及流分析",
+    "跨越基本块的优化",
+    "一个简单的代码生成器",
+    "窥孔优化",
+    "寄存器分配和指派",
+    "通过树重写来选择指令",
+    "指令调度"
+  ],
+  "output": {
+    "json": "./notebooklm-results.json",
+    "markdown": "./notebooklm-results.md"
+  },
+  "runtime": {
+    "answerTimeoutMs": 300000,
+    "copyPollIntervalMs": 3000,
+    "copyStableRounds": 3
+  },
+  "notion": {
+    "pageTitle": "chap 8 代码生成和优化",
+    "pageId": ""
+  }
+}
