@@ -1,26 +1,27 @@
 # NotebookLM 批量提示词自动化工作流
 
-本文档给其他 agent 快速接手用。项目根目录为当前仓库根目录；具体本地路径由用户所在环境决定。
+本文档给 Claude Code / agent 快速接手用。项目根目录为当前仓库根目录；具体本地路径由用户所在环境决定。
 
 ## 目标
 
-把一个提示词模板中的 `{WORD}` 占位符替换为词语列表中的每个词，逐条提交给 NotebookLM，让 NotebookLM 基于用户已选择的笔记本和参考材料生成 Markdown 笔记。脚本会把回答保存到本地 JSON 和 Markdown 文件。需要写入 Notion 时，由 agent 读取本地 Markdown/JSON，再用 Notion MCP 追加到用户指定页面。
+把提示词模板中的 `{WORD}` 占位符替换为词语列表中的每个词，逐条提交给 NotebookLM，让 NotebookLM 基于用户已选择的笔记本和参考材料生成 Markdown 笔记。脚本把回答保存到本地 JSON 和 Markdown 文件。
+
+需要写入 Notion 时，由 Claude Code 读取本地结果文件，再用 Notion MCP 写入用户指定页面。Node 脚本本身不调用 Notion。
 
 ## 当前项目结构
 
-- `config.json`：当前用户配置，包含 NotebookLM 地址、Edge profile、提示词模板、词语列表、输出路径、Notion 页面提示信息。
-- `config.example.json`：开源项目的配置模板。
+- `config.example.json`：开源配置模板。
+- `config.json`：用户本地配置，包含 NotebookLM 地址、Edge profile、提示词模板、词语列表、输出路径、Notion 页面提示信息；不应提交。
 - `config.js`：读取和校验配置。
-- `open-notebooklm.js`：用 Playwright 启动 Microsoft Edge 专用 profile，供用户登录、打开笔记本、选择参考材料。
-- `batch-notebooklm.js`：批量提交提示词、复制 NotebookLM 回答、保存输出。
-- `notebooklm-results.json`：每个词对应的原始 prompt、answer、createdAt。
-- `notebooklm-results.md`：合并后的 Markdown 笔记，用于写入 Notion。
-- `edge-profile/`：Edge 专用自动化用户数据目录，包含登录态，不应提交开源仓库。
-- `.gitignore`：忽略登录态、依赖和输出结果。
+- `batch-notebooklm.js`：打开 Edge，批量提交提示词，复制 NotebookLM 回答，保存输出。
+- `notebooklm-results.json`：每个词对应的原始 prompt、answer、createdAt；不应提交。
+- `notebooklm-results.md`：合并后的 Markdown 笔记，用于写入 Notion；不应提交。
+- `edge-profile/`：Edge 专用自动化用户数据目录，包含登录态；不应提交。
+- `.gitignore`：忽略登录态、依赖、本地配置和输出结果。
 
 ## 环境要求
 
-- Windows 11 / PowerShell。
+- Windows / PowerShell。
 - 已安装 Microsoft Edge。
 - 已安装 Node.js LTS 和 npm。
 - 已安装项目依赖：`npm install`。
@@ -32,15 +33,10 @@
 
 ```powershell
 npm install
-```
-
-2. 如果是新用户，复制配置模板：
-
-```powershell
 Copy-Item config.example.json config.json
 ```
 
-3. 编辑 `config.json`：
+2. 编辑 `config.json`：
 
 - `notebooklmUrl`：NotebookLM 入口或具体笔记本 URL。默认 `https://notebooklm.google.com/`。
 - `userDataDir`：Edge 自动化 profile 路径。默认 `./edge-profile`。
@@ -51,46 +47,32 @@ Copy-Item config.example.json config.json
 - `runtime.answerTimeoutMs`：等待新回答出现的最长时间。
 - `runtime.copyPollIntervalMs`：轮询复制按钮内容的间隔。
 - `runtime.copyStableRounds`：连续复制到相同内容多少次后认为回答稳定完成。
-- `notion.pageTitle` / `notion.pageId`：给 agent 用于定位 Notion 页面；脚本本身不写 Notion。
-
-## 用户登录和页面准备要求
-
-Google 可能拦截 Playwright 自动化浏览器登录。推荐使用专用 Edge profile 并让用户在该 profile 中完成登录。
-
-1. 运行：
-
-```powershell
-npm run open
-```
-
-2. 在打开的 Edge 窗口中由用户完成：
-
-- 登录 Google。
-- 打开 NotebookLM。
-- 进入目标笔记本。
-- 勾选本轮提问需要使用的参考材料。
-- 确认聊天输入框可见。
-
-3. 用户准备完成后，可以关闭 Edge 窗口，或在批处理脚本重新打开后再次确认。关键要求：同一个 `edge-profile` 不要被两个 Playwright 脚本同时占用。
+- `notion.pageTitle` / `notion.pageId`：给 Claude Code 用于定位 Notion 页面；脚本本身不写 Notion。
 
 ## 批量提问流程
 
 1. 确认 `config.json` 已配置。
-2. 关闭其他使用同一 `edge-profile` 的 Edge/Playwright 窗口。
-3. 运行：
+2. 运行：
 
 ```powershell
 npm start
 ```
 
-4. 脚本会打开 Edge，并在终端提示：
+3. 脚本会打开 Edge，并在终端提示：
 
 ```text
-请在打开的 Edge 中确认 NotebookLM 笔记本页面和参考材料已选好。
-确认后回到此终端按 Enter 开始批量提问...
+请在打开的 Edge 中登录 Google，进入目标 NotebookLM 笔记本，并选择本轮要使用的参考材料。
+确认聊天输入框可见后，回到此终端按 Enter 开始批量提问...
 ```
 
-5. 用户在 Edge 中确认页面和参考材料后，回到终端按 Enter。
+4. 用户在 Edge 中完成：
+
+- 登录 Google。
+- 进入目标 NotebookLM 笔记本。
+- 勾选本轮提问需要使用的参考材料。
+- 确认聊天输入框可见。
+
+5. 回到终端按 Enter。
 6. 脚本逐条处理 `config.words`：
 
 - 用 `promptTemplate` 替换所有 `{WORD}`。
@@ -108,36 +90,15 @@ npm start
 npm run start:force
 ```
 
-## 当前默认提示词和词语列表
-
-当前 `config.json` 的提示词模板：
-
-```text
-按照下面的提纲详细总结一下 第 8 章 PPT 中 {WORD} 的所有知识点或内容，并加上详细的讲解，输出为 markdown 笔记，不要包含引用标记：
-# {WORD}
-```
-
-当前词语列表：
-
-1. 代码生成器设计中的问题
-2. 目标语言
-3. 目标代码中的地址
-4. 基本块及其优化
-5. 控制流图及流分析
-6. 跨越基本块的优化
-7. 一个简单的代码生成器
-8. 窥孔优化
-9. 寄存器分配和指派
-10. 通过树重写来选择指令
-11. 指令调度
-
 ## Notion 写入流程
 
-脚本不直接写 Notion，因为 Notion 写入通常由 Claude/agent 的 Notion MCP 完成。当前推荐流程：
+Notion 操作明确由 Claude Code 完成，不由本项目的 Node 脚本完成。
 
-1. 读取 `notebooklm-results.md` 或 `notebooklm-results.json`。
-2. 如果用户只给了页面标题，先用 Notion MCP 搜索页面。
-3. 如果配置中已有 `notion.pageId`，优先使用该 ID。
+推荐流程：
+
+1. Claude Code 读取 `config.json`，确认 `notion.pageId` 或 `notion.pageTitle`。
+2. Claude Code 读取 `notebooklm-results.md` 或 `notebooklm-results.json`。
+3. 如果用户只给了页面标题，Claude Code 用 Notion MCP 搜索页面。
 4. 写入前建议清理 NotebookLM 输出中的：
 
 - 外层 ```markdown 代码围栏。
@@ -145,14 +106,14 @@ npm run start:force
 - “接下来要不要继续……”这类对话式结尾。
 - 引用标记。
 
-5. 用 Notion MCP `notion-update-page` 的 `insert_content` 将 Markdown 追加到页面末尾。
-6. Notion 目标页由用户提供，或由本地 `config.json` 的 `notion.pageTitle` / `notion.pageId` 指定。开源模板中的 pageId 应保持为空。
+5. Claude Code 用 Notion MCP `notion-update-page` 的 `insert_content` 将 Markdown 追加到页面末尾，或按用户要求执行替换/创建。
+6. 写入、追加、替换、创建 Notion 页面的实际操作都由 Claude Code 发起并完成；`npm start` 只生成本地结果文件。
 
 ## 常见故障和处理
 
 ### Google 无法登录
 
-不要让 Playwright 自动化登录。让用户先运行 `npm run open`，在 Edge 专用 profile 中手动登录。登录态会保存在 `edge-profile/`。
+不要自动化 Google 登录。运行 `npm start` 后，在打开的 Edge 窗口中手动登录。登录态会保存在 `edge-profile/`。
 
 ### profile 被占用
 

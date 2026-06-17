@@ -136,8 +136,8 @@ function loadExistingResults(config, force) {
   }
 
   console.log(`配置文件：${config.configPath}`);
-  console.log('请在打开的 Edge 中确认 NotebookLM 笔记本页面和参考材料已选好。');
-  await waitForEnter('确认后回到此终端按 Enter 开始批量提问...');
+  console.log('请在打开的 Edge 中登录 Google，进入目标 NotebookLM 笔记本，并选择本轮要使用的参考材料。');
+  await waitForEnter('确认聊天输入框可见后，回到此终端按 Enter 开始批量提问...');
 
   const results = loadExistingResults(config, force);
   const completed = new Set(results.map((item) => item.word));
