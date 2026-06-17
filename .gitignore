@@ -1,9 +1,10 @@
 node_modules/
 edge-profile/
 config.json
-notebooklm-results.json
-notebooklm-results.md
+notebooklm-results*.json
+notebooklm-results*.md
 *.log
 .env
 .DS_Store
 Thumbs.db
+task/
